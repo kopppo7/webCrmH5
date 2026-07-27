@@ -1,11 +1,10 @@
 <template>
-  <div class="add-user-container">
-    <van-nav-bar
-      title="新增员工"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-    />
+  <div class="add-user-container"> <van-nav-bar
+  :title="t('title.addUSer')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <van-form @submit="onSubmit">
       <van-cell-group title="基础信息">

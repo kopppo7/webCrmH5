@@ -2,7 +2,7 @@
 <template>
   <div class="container-wrapper">
     <van-nav-bar
-      :title="isAdmin ? t('customer.allCustomers', '全部客户') : t('customer.myCustomers', '我的客户')"
+      :title="isAdmin ? t('title.allCustomers') : t('title.myCustomers')"
       left-arrow
       @click-left="router.back()"
       fixed

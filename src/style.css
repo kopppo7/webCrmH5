@@ -294,3 +294,48 @@ code {
     border-right-color: var(--border);
   }
 }
+
+/* ==================================================== */
+/* 统一全局客户状态标签样式 (基于系统字典值) */
+/* ==================================================== */
+
+/* 1. 基础标签容器样式 */
+.global-status-tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px; /* 统一圆角 */
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* 2. 具体字典值颜色映射 */
+
+/* 🟢 已成交 (deal_completed) - 绿色系 */
+.status-deal_completed { background-color: #d1fae5; color: #10b981; }
+
+/* 🔴 明确拒绝 / 流失 (clear_reject) - 红色系 */
+.status-clear_reject { background-color: #fee2e2; color: #ef4444; }
+
+/* 🔵 待处理 (pending) - 蓝色系 */
+.status-pending { background-color: #e0f2fe; color: #0284c7; }
+
+/* 🟣 跟进中 / 预约看车 (following, appointment_machine_v) - 紫色系 */
+.status-following, 
+.status-appointment_machine_v { background-color: #ede9fe; color: #8b5cf6; }
+
+/* 🟠 未接电话 (missed_call, cannot_answer_call) - 橙/黄色系 */
+.status-missed_call, 
+.status-cannot_answer_call { background-color: #fef3c7; color: #d97706; }
+
+/* ⚪ 无效线索 (invalid_lead) - 灰色系 */
+.status-invalid_lead { background-color: #f3f4f6; color: #9ca3af; }
+
+/* ⚠️ 逾期专属标签 (非字典值，属于业务逻辑) - 高警示红 */
+.status-overdue { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+/* 兜底默认颜色 */
+.status-default { background-color: #f3f4f6; color: #4b5563; }

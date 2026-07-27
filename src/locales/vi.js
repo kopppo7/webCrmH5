@@ -17,6 +17,7 @@ export default {
     logoutConfirmMsg:
       "Bạn có chắc chắn muốn đăng xuất khỏi tài khoản hiện tại và quay lại trang đăng nhập không?",
     logoutSuccess: "Đã đăng xuất",
+    back: 'Quay lại'
   },
   home: {
     switchLangBtn: "Chuyển sang tiếng Thái/Tiếng Việt",
@@ -31,6 +32,25 @@ export default {
     workReport: "Báo cáo công việc",
     workReportDesc: "Điền báo cáo hàng ngày và kế hoạch làm việc hàng tuần",
     disabledMsg: "Tài khoản đã bị vô hiệu hóa, vui lòng liên hệ quản trị viên",
+  },
+  title: {
+    dailyReport: "Điền báo cáo ngày",
+    reportDetail: "Chi tiết báo cáo",
+    reportHistory: "Lịch sử báo cáo",
+    reportMenu: "Báo cáo công việc",
+    weeklyReport: "Điền kế hoạch công việc tuần",
+    salesList: "Danh sách khách hàng",
+    saleAddCustomer: "Thêm khách hàng thủ công",
+    followUp: "Ghi nhận chăm sóc",
+    allCustomers: "Tất cả khách hàng",
+    myCustomers: "Khách hàng của tôi",
+    customerDetail: "Chi tiết khách hàng",
+    adminUserList: "Quản lý nhóm",
+    setting: "Cài đặt",
+    dictManage: "Quản lý danh mục",
+    customerPool: "Xem kho khách hàng",
+    assignCustomer: "Phân công khách hàng",
+    addUSer: "Thêm người dùng",
   },
   customerDetail: {
     copyAll: "Sao chép tất cả",
@@ -153,6 +173,17 @@ export default {
       validateNote: "Vui lòng nhập tình hình",
       submitConfirmMsg: "Xác nhận gửi báo cáo công việc hằng ngày",
       submitSuccess: "Gửi báo cáo ngày thành công!",
+    },
+    detail: {
+      title: "Chi tiết báo cáo",
+      unfinishedReason: "Lý do chưa hoàn thành",
+      rejectReason: "Lý do từ chối",
+      approvalRemark: "Ghi chú phê duyệt",
+      dateLabel: "Ngày báo cáo",
+      weekLabel: "Chu kỳ báo cáo",
+      pendingTodos: "Công việc còn tồn đọng",
+      approvalHistory: "Lịch sử phê duyệt",
+      reEditBtn: "Chỉnh sửa và gửi lại",
     },
   },
   addCustomer: {

@@ -1,11 +1,12 @@
 <!-- src/pages/customer-detail/index.vue -->
 <template>
-    <van-nav-bar
-      title="客户详情"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-    />
+  
+  <van-nav-bar
+  :title="t('title.customerDetail')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container">
     
     <!-- ================= 1. 基础信息卡片 ================= -->
@@ -13,66 +14,62 @@
       <div class="info-header">
         <div>
           <span class="name">{{ customer.name }}</span>
-          <span :class="['status-tag', `status-${customer.status}`]">
+          <!-- 🌟 修复 1: 顶部标签使用统一的 bg-status 颜色池 -->
+          <span :class="['status-tag', `bg-status-${customer.status || 'default'}`]">
             {{ localizedStatusMap[customer.status] || customer.status }}
           </span>
         </div>
         <div class="boss-actions" v-if="isAdmin">
-          <div class="action-btn copy-btn" @click="copyAllContext">📄 {{ t('customerDetail.copyAll') }}</div>
-          <div class="action-btn trans-btn" @click="openGlobalTransModal">🇨🇳 {{ t('customerDetail.cnInfo') }}</div>
+          <div class="action-btn copy-btn" @click="copyAllContext">📄 {{ t('customerDetail.copyAll', '复制档案') }}</div>
+          <div class="action-btn trans-btn" @click="openGlobalTransModal">🇨🇳 {{ t('customerDetail.cnInfo', '中文建档') }}</div>
         </div>
       </div>
       
       <div class="info-list">
         <div class="info-item" @click="makePhoneCall(customer.phone)">
-          <span class="label">{{ t('customerDetail.phone') }}:</span>
+          <span class="label">{{ t('customerDetail.phone', '电话') }}:</span>
           <span class="value highlight">{{ customer.phone }} 📞</span>
         </div>
 
         <div class="info-item">
-          <span class="label">{{ t('customerDetail.salesOwner') }}:</span>
-          <span class="value">{{ customer.sales_name || customer.assigned_sales_name || t('customerDetail.unassigned') }}</span>
+          <span class="label">{{ t('customerDetail.salesOwner', '所属销售') }}:</span>
+          <span class="value">{{ customer.sales_name || customer.assigned_sales_name || t('customerDetail.unassigned', '未分配') }}</span>
         </div>
 
         <div class="info-item" v-if="customer.customer_source">
-          <span class="label">{{ t('customerDetail.source') }}:</span>
+          <span class="label">{{ t('customerDetail.source', '来源') }}:</span>
           <span class="value">{{ t(`dictSource.${customer.customer_source}`) || customer.customer_source }}</span>
         </div>
 
         <div class="info-item">
-          <span class="label">{{ t('customerDetail.city') }}:</span>
+          <span class="label">{{ t('customerDetail.city', '城市') }}:</span>
           <span class="value">{{ customer.city }}</span>
         </div>
 
         <div class="info-item" v-if="customer.product_category">
-          <span class="label">{{ t('customerDetail.category') }}:</span>
+          <span class="label">{{ t('customerDetail.category', '品类') }}:</span>
           <span class="value">{{ t(`dictProduct.${customer.product_category}`) || customer.product_category }}</span>
         </div>
 
         <div class="info-item" v-if="customer.payload">
-          <span class="label">{{ t('customerDetail.payload') }}:</span>
+          <span class="label">{{ t('customerDetail.payload', '机型') }}:</span>
           <span class="value">{{ customer.payload }}</span>
         </div>
 
-        <div class="info-item" v-if="customer.timeline">
-          <span class="label">{{ t('customerDetail.timeline') }}:</span>
-          <span class="value">{{ customer.timeline }}</span>
-        </div>
-
         <div class="info-item" v-if="customer.remark">
-          <span class="label">{{ t('customerDetail.remark') }}:</span>
+          <span class="label">{{ t('customerDetail.remark', '备注') }}:</span>
           <span class="value">{{ customer.remark }}</span>
         </div>
 
         <div class="info-item" v-if="customer.next_follow_up">
-          <span class="label">{{ t('customerDetail.nextFollowUp') }}:</span>
+          <span class="label">{{ t('customerDetail.nextFollowUp', '下次跟进') }}:</span>
           <span class="value" style="color: #ff9800; font-weight: bold;">{{ customer.next_follow_up }}</span>
         </div>
 
         <div class="info-item" v-if="customer.is_key_customer">
-          <span class="label" style="color: red;">{{ t('customerDetail.keyCustomer') }}:</span>
+          <span class="label" style="color: red;">{{ t('customerDetail.keyCustomer', '重点客户') }}:</span>
           <span class="value" style="color: #f59e0b; font-weight: bold;">
-            {{ customer.key_customer_reason || t('customerDetail.yes') }}
+            {{ customer.key_customer_reason || t('customerDetail.yes', '是') }}
           </span>
         </div>
       </div>
@@ -82,13 +79,13 @@
     <div class="profile-card" v-if="customer._id">
       <div :class="['profile-header', { collapsed: !isProfileExpanded }]" @click="toggleProfile">
         <div class="title-box">
-          <span class="title">{{ t('customerDetail.profileTitle') }}</span>
-          <span class="desc" v-if="isProfileExpanded">{{ t('customerDetail.profileDesc') }}</span>
-          <span class="desc highlight-text" v-else>{{ t('customerDetail.profileClickToExpand') }}</span>
+          <span class="title">{{ t('customerDetail.profileTitle', '客户画像') }}</span>
+          <span class="desc" v-if="isProfileExpanded">{{ t('customerDetail.profileDesc', '详细特征') }}</span>
+          <span class="desc highlight-text" v-else>{{ t('customerDetail.profileClickToExpand', '点击展开查看') }}</span>
         </div>
         <div class="header-action">
-          <div class="edit-btn" @click.stop="openProfileModal" v-if="isProfileExpanded">{{ t('customerDetail.edit') }}</div>
-          <div class="toggle-text">{{ isProfileExpanded ? t('customerDetail.collapse') : t('customerDetail.expand') }}</div>
+          <div class="edit-btn" @click.stop="openProfileModal" v-if="isProfileExpanded">{{ t('customerDetail.edit', '编辑') }}</div>
+          <div class="toggle-text">{{ isProfileExpanded ? t('customerDetail.collapse', '收起') : t('customerDetail.expand', '展开') }}</div>
         </div>
       </div>
 
@@ -96,7 +93,7 @@
         <div class="profile-item" v-for="key in ['demand', 'motivation', 'userType', 'scenario', 'timeframe']" :key="key">
           <div class="label">{{ t(`customerDetail.profile_${key}`) }}</div>
           <span :class="['value', { unknown: !customer.profile?.[key] }]">
-            {{ customer.profile?.[key] || t('customerDetail.unknown') }}
+            {{ customer.profile?.[key] || t('customerDetail.unknown', '未知') }}
           </span>
         </div>
       </div>
@@ -104,8 +101,8 @@
 
     <!-- ================= 3. 时间轴区域 ================= -->
     <div class="timeline-section" v-if="customer._id">
-      <div class="section-title">{{ t('customerDetail.timelineTitle') }}</div>
-      <div v-if="logs.length === 0" class="empty-logs">{{ t('customerDetail.emptyTimeline') }}</div>
+      <div class="section-title">{{ t('customerDetail.timelineTitle', '跟进时间轴') }}</div>
+      <div v-if="logs.length === 0" class="empty-logs">{{ t('customerDetail.emptyTimeline', '暂无记录') }}</div>
 
       <div class="timeline-item" v-for="item in logs" :key="item._id">
         <div class="line-box">
@@ -116,29 +113,33 @@
         <div class="log-content">
           <div class="log-header">
             <span class="log-date">{{ item.displayTime || item.createTimeStr }}</span>
-            <span class="log-type">{{ item.follow_type }}</span>
+            <!-- 🌟 修复 2: 时间轴标签同样使用统一的 bg-status 颜色池 -->
+            <span :class="['log-type', `bg-status-${item.result_tag || 'default'}`]">
+              <span v-if="item.result_tag === 'clear_reject'">❌ </span>
+              <span v-else-if="item.result_tag === 'deal_completed'">🎉 </span>
+              {{ localizedStatusMap[item.result_tag] || item.result_tag }}
+            </span>
           </div>
-          <div class="log-tag">{{ localizedStatusMap[item.result_tag] || item.result_tag }}</div>
           
-          <p class="log-note">{{ item.note }}</p>
+          <p class="log-note">{{ item.content || item.note }}</p>
           
           <div class="log-reason" v-if="item.lost_reason">
-            {{ t('customerDetail.lostReason') }}：<span>{{ item.lost_reason }}</span>
+            {{ t('customerDetail.lostReason', '流失原因') }}：<span>{{ item.lost_reason }}</span>
           </div>
           
           <div class="log-reason" v-if="item.transaction_amount">
             <span style="color: #10b981; font-weight: bold;">
-              💰 {{ t('customerDetail.transactionAmount') }}：{{ item.transaction_amount }}
+              💰 {{ t('customerDetail.transactionAmount', '成交金额') }}：{{ item.transaction_amount }}
             </span>
           </div>
 
-          <div class="log-images" v-if="item.screenshot_files && item.screenshot_files.length > 0">
+          <div class="log-images" v-if="item.images && item.images.length > 0">
             <img 
-              v-for="img in item.screenshot_files" 
+              v-for="img in item.images" 
               :key="img" 
               :src="img" 
               class="log-img" 
-              @click="previewImage(img, item.screenshot_files)" 
+              @click="previewImage(img, item.images)" 
             />
           </div>
         </div>
@@ -148,64 +149,62 @@
     <!-- ================= 4. 底部固定按钮组 ================= -->
     <div class="footer-action" v-if="customer._id">
       <div class="btn-group">
-        <!-- Vant 的动作面板代替小程序 Picker -->
         <van-button 
           v-if="isAdmin" 
           class="reassign-btn" 
           @click="showReassignPicker = true"
         >
-          {{ t('customerDetail.reassign') }}
+          {{ t('customerDetail.reassign', '重新分配') }}
         </van-button>
         
         <van-button 
           class="follow-btn" 
           @click="goToFollowUp"
         >
-          {{ t('customerDetail.btnFollowUp') }}
+          {{ t('customerDetail.btnFollowUp', '写跟进') }}
         </van-button>
       </div>
     </div>
 
-    <!-- ================= 5. 弹窗系列 (使用 Vant Popup) ================= -->
+    <!-- ================= 5. 弹窗系列 ================= -->
     
-    <!-- 重新分配 Picker 弹窗 -->
     <van-popup v-model:show="showReassignPicker" position="bottom" round>
       <van-picker
-        :title="t('customerDetail.reassignTitle')"
+        :title="t('customerDetail.reassignTitle', '选择销售')"
         :columns="salesOptions"
         @confirm="onReassignConfirm"
         @cancel="showReassignPicker = false"
       />
     </van-popup>
 
-    <!-- 编辑画像弹窗 -->
     <van-popup v-model:show="showProfileModal" position="bottom" round class="custom-popup">
-      <div class="modal-header">{{ t('customerDetail.editProfileTitle') }}</div>
+      <div class="modal-header">{{ t('customerDetail.editProfileTitle', '编辑画像') }}</div>
       <div class="modal-scroll">
         <div class="form-group" v-for="key in ['demand', 'motivation', 'userType', 'scenario', 'timeframe']" :key="key">
           <span class="form-label">{{ t(`customerDetail.profile_${key}`) }}</span>
-          <input class="form-input" v-model="editProfileForm[key]" />
+          <!-- 🌟 修复 3: 全面禁用原生下拉历史提示 -->
+          <input class="form-input" v-model="editProfileForm[key]" autocomplete="off" />
         </div>
       </div>
       <div class="modal-footer">
-        <div class="btn-cancel" @click="showProfileModal = false">{{ t('customerDetail.cancel') }}</div>
-        <div class="btn-save" @click="saveProfile">{{ t('customerDetail.saveProfile') }}</div>
+        <div class="btn-cancel" @click="showProfileModal = false">{{ t('customerDetail.cancel', '取消') }}</div>
+        <div class="btn-save" @click="saveProfile">{{ t('customerDetail.saveProfile', '保存') }}</div>
       </div>
     </van-popup>
 
-    <!-- 全局中文档案弹窗 -->
     <van-popup v-model:show="showGlobalTransModal" position="bottom" round class="custom-popup">
-      <div class="modal-header">{{ t('customerDetail.cnArchiveTitle') }}</div>
+      <div class="modal-header">{{ t('customerDetail.cnArchiveTitle', '中文建档') }}</div>
       <div class="modal-scroll">
         <textarea 
           class="trans-textarea" 
-          :placeholder="t('customerDetail.cnArchivePlaceholder')" 
+          :placeholder="t('customerDetail.cnArchivePlaceholder', '请输入中文档案...')" 
           v-model="globalTransText"
+          autocomplete="off"
         ></textarea>
       </div>
       <div class="modal-footer">
-        <div class="btn-cancel" @click="showGlobalTransModal = false">{{ t('customerDetail.cancel') }}</div>
-        <div class="btn-save" @click="saveGlobalTranslation">{{ t('customerDetail.saveProfile') }}</div>
+        <div class="btn-cancel" @click="showGlobalTransModal = false">{{ t('customerDetail.cancel', '取消') }}</div>
+        <div class="btn-save" @click="saveGlobalTranslation">{{ t('customerDetail.saveProfile', '保存') }}</div>
       </div>
     </van-popup>
 
@@ -216,7 +215,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-// 🌟 修复 1：引入 closeToast
 import { showToast, closeToast, showImagePreview, showConfirmDialog } from 'vant';
 import request from '../../utils/request';
 import { storage } from '../../utils/storage';
@@ -232,7 +230,6 @@ const isAdmin = ref(false);
 const localizedStatusMap = ref({});
 const salesList = ref([]);
 
-// UI 状态
 const isProfileExpanded = ref(false);
 const showProfileModal = ref(false);
 const editProfileForm = ref({});
@@ -241,7 +238,7 @@ const globalTransText = ref('');
 const showReassignPicker = ref(false);
 
 const salesOptions = computed(() => {
-  return salesList.value.map(sales => ({ text: sales.name, value: sales._openid }));
+  return salesList.value.map(sales => ({ text: sales.name, value: sales._openid || sales.userId }));
 });
 
 onMounted(() => {
@@ -293,7 +290,6 @@ const initData = async () => {
 
     const logsRes = await request.get(`/api/customers/logs`, { params: { id: customerId.value } });
     
-    // 🌟 核心修改：手动将时间戳格式化为前端认识的 displayTime
     logs.value = (logsRes.data || []).map(log => {
       const d = new Date(log.timestamp || log.created_at);
       const year = d.getFullYear();
@@ -336,7 +332,6 @@ const saveProfile = async () => {
     showToast({ type: 'success', message: '保存成功' });
   } catch (err) {
     console.error(err);
-    // 🌟 修复 3：捕获异常时关闭 loading 兜底
     closeToast();
   }
 };
@@ -358,7 +353,6 @@ const saveGlobalTranslation = async () => {
     showToast({ type: 'success', message: '保存成功' });
   } catch (err) {
     console.error(err);
-    // 🌟 修复 4：捕获异常时关闭 loading 兜底
     closeToast();
   }
 };
@@ -373,8 +367,8 @@ const onReassignConfirm = ({ selectedOptions }) => {
   }
 
   showConfirmDialog({
-    title: t('customerDetail.reassignConfirmTitle'),
-    message: `${t('customerDetail.reassignConfirmMsg1')} [${oldSalesName}] ${t('customerDetail.reassignConfirmMsg2')} [${newSales.text}] ?`,
+    title: t('customerDetail.reassignConfirmTitle', '确认分配'),
+    message: `确定将客户从 [${oldSalesName}] 重新分配给 [${newSales.text}] 吗？`,
   }).then(async () => {
     showToast({ type: 'loading', message: '分配中...', duration: 0 });
     try {
@@ -389,7 +383,6 @@ const onReassignConfirm = ({ selectedOptions }) => {
       initData();
     } catch (error) {
       console.error(error);
-      // 🌟 修复 5：捕获异常时关闭 loading 兜底
       closeToast();
     }
   }).catch(() => {});
@@ -413,7 +406,7 @@ const copyAllContext = async () => {
   
   logs.value.forEach(log => {
     const statusStr = localizedStatusMap.value[log.result_tag] || log.result_tag;
-    text += `[${log.createTimeStr || log.displayTime}] 状态:${statusStr}\n内容: ${log.note}\n`;
+    text += `[${log.createTimeStr || log.displayTime}] 状态:${statusStr}\n内容: ${log.content || log.note}\n`;
     if (log.lost_reason) text += `原因: ${log.lost_reason}\n`;
     if (log.transaction_amount) text += `成交金额: ${log.transaction_amount}\n`;
     text += `---\n`;
@@ -447,7 +440,6 @@ const previewImage = (currentImg, allImages) => {
 </script>
 
 <style scoped>
-/* ================= 样式直接按比例降级 (rpx / 2) ================= */
 .container {
   padding: 15px 0;
   background-color: #f4f6f9;
@@ -456,7 +448,7 @@ const previewImage = (currentImg, allImages) => {
 }
 
 .customer-info-card, .profile-card, .timeline-section {
-  width: 90%; /* 适配 H5 稍微加宽 */
+  width: 90%; 
   background-color: #ffffff;
   border-radius: 8px;
   padding: 15px;
@@ -481,21 +473,34 @@ const previewImage = (currentImg, allImages) => {
   margin-right: 8px;
 }
 
+/* 🌟 统一定义的 status-tag 和 log-type 基础尺寸样式 */
 .status-tag {
   font-size: 12px;
   padding: 3px 8px;
-  border-radius: 15px;
-  background: #e6f7ff;
-  color: #1890ff;
+  border-radius: 15px; /* 顶部标签保持较圆的风格 */
   font-weight: bold;
   display: inline-block;
   vertical-align: middle;
 }
 
-.boss-actions {
-  display: flex;
-  gap: 6px;
+.log-type {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px; /* 时间轴标签保持微方风格 */
+  font-weight: bold;
 }
+
+/* 🌟 统一的颜色字典池 (强制覆盖原本样式) */
+.bg-status-deal_completed { background: #d1fae5 !important; color: #10b981 !important; }
+.bg-status-clear_reject { background: #fee2e2 !important; color: #ef4444 !important; }
+.bg-status-pending { background: #e0f2fe !important; color: #0284c7 !important; }
+.bg-status-following, .bg-status-appointment_machine_v { background: #ede9fe !important; color: #8b5cf6 !important; }
+.bg-status-missed_call, .bg-status-cannot_answer_call { background: #fef3c7 !important; color: #d97706 !important; }
+.bg-status-invalid_lead { background: #f3f4f6 !important; color: #9ca3af !important; }
+.bg-status-default { background: #f3f4f6 !important; color: #4b5563 !important; }
+
+
+.boss-actions { display: flex; gap: 6px; }
 
 .action-btn {
   font-size: 11px;
@@ -506,38 +511,11 @@ const previewImage = (currentImg, allImages) => {
 .copy-btn { background: #f0f9eb; color: #67c23a; }
 .trans-btn { background: #ecf5ff; color: #409eff; }
 
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.info-item .label {
-  color: #888888;
-  margin-right: 8px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.info-item .value {
-  color: #333333;
-  font-weight: 500;
-  flex: 1;
-  word-break: break-all;
-}
-
-.info-item .highlight {
-  color: #07c160;
-  font-weight: bold;
-  cursor: pointer;
-}
+.info-list { display: flex; flex-direction: column; gap: 8px; }
+.info-item { display: flex; align-items: flex-start; font-size: 14px; line-height: 1.5; }
+.info-item .label { color: #888888; margin-right: 8px; white-space: nowrap; flex-shrink: 0; }
+.info-item .value { color: #333333; font-weight: 500; flex: 1; word-break: break-all; }
+.info-item .highlight { color: #07c160; font-weight: bold; cursor: pointer; }
 
 /* 画像卡片样式 */
 .profile-header {
@@ -578,21 +556,21 @@ const previewImage = (currentImg, allImages) => {
 }
 .empty-logs { text-align: center; color: #999; font-size: 14px; padding: 20px 0; }
 
-.timeline-item { display: flex; margin-bottom: 20px; }
-.line-box { width: 20px; display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: #07c160; border: 3px solid #e1f5e8; z-index: 2; }
-.line { flex: 1; width: 2px; background: #eee; margin-top: 4px; margin-bottom: -24px; }
+.timeline-item { display: flex; margin-bottom: 20px; position: relative; }
+.line-box { width: 20px; display: flex; flex-direction: column; align-items: center; margin-right: 10px; position: relative; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #07c160; border: 3px solid #e1f5e8; z-index: 2; flex-shrink: 0; }
+.line { position: absolute; top: 16px; bottom: -24px; width: 2px; background: #eee; z-index: 1; }
 .timeline-item:last-child .line { display: none; }
 
 .log-content { flex: 1; background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: 8px; padding: 12px; }
 .log-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .log-date { font-size: 12px; color: #999; }
-.log-type { font-size: 12px; color: #fa8c16; background: #fff7e6; padding: 2px 6px; border-radius: 3px; }
-.log-tag { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 5px; }
+
+
 .log-note { font-size: 14px; color: #555; line-height: 1.5; margin-bottom: 8px; white-space: pre-wrap; }
 .log-reason { font-size: 12px; color: #ff4d4f; background: #fff1f0; padding: 6px; border-radius: 4px; margin-bottom: 8px; }
 
-.log-images { display: flex; flex-wrap: wrap; gap: 8px; }
+.log-images { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .log-img { width: 70px; height: 70px; border-radius: 6px; background: #eee; object-fit: cover; cursor: pointer; }
 
 /* 底部操作区 */
@@ -620,29 +598,4 @@ const previewImage = (currentImg, allImages) => {
 .btn-cancel, .btn-save { flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 15px; cursor: pointer;}
 .btn-cancel { background: #f5f5f5; color: #666; }
 .btn-save { background: #07c160; color: #fff; flex: 2; }
-
-/* 时间轴区域 */
-.section-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 15px;
-  border-left: 4px solid #07c160;
-  padding-left: 8px;
-}
-.empty-logs { text-align: center; color: #999; font-size: 14px; padding: 20px 0; }
-
-.timeline-item { display: flex; margin-bottom: 20px; position: relative; }
-.line-box { width: 20px; display: flex; flex-direction: column; align-items: center; margin-right: 10px; position: relative; }
-
-/* 🌟 修改点 1：增加 flex-shrink: 0 防止圆点被挤压变形 */
-.dot { width: 10px; height: 10px; border-radius: 50%; background: #07c160; border: 3px solid #e1f5e8; z-index: 2; flex-shrink: 0; }
-
-/* 🌟 修改点 2：改用绝对定位强行撑开垂直线 */
-.line { position: absolute; top: 16px; bottom: -24px; width: 2px; background: #eee; z-index: 1; }
-.timeline-item:last-child .line { display: none; }
-
-.log-content { flex: 1; background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: 8px; padding: 12px; }
-.log-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-/* ... 下面的样式保持你原样即可 ... */
 </style>

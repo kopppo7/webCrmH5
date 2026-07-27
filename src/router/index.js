@@ -16,7 +16,9 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // ==========================================
   // 管理员页面
+  // ==========================================
   {
     path: "/admin-home",
     name: "AdminHome",
@@ -26,7 +28,7 @@ const routes = [
   {
     path: "/admin-add-user",
     name: "AdminAddUser",
-    component: () => import("../pages/admin-add-user/index.vue"), // 确保你后续建了这个文件
+    component: () => import("../pages/admin-add-user/index.vue"), 
     meta: { requiresAuth: true },
   },
   { 
@@ -59,14 +61,16 @@ const routes = [
     component: () => import('../pages/admin-customer-pool/index.vue'),
     meta: { requiresAuth: true } 
   },
+
+  // ==========================================
+  // 销售业务页面
+  // ==========================================
   { 
     path: '/customer-list', 
     name: 'customerList', 
     component: () => import('../pages/customer-list/index.vue'),
     meta: { requiresAuth: true } 
   },
-
-  // 销售业务页面
   {
     path: "/sale-add-customer",
     name: "SaleAddCustomer",
@@ -92,7 +96,9 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
-  // 工作汇报页面
+  // ==========================================
+  // 工作汇报页面 (完全对齐当前目录结构)
+  // ==========================================
   {
     path: "/work-report",
     name: "WorkReport",
@@ -117,6 +123,12 @@ const routes = [
     component: () => import("../pages/work-report/history.vue"),
     meta: { requiresAuth: true },
   },
+  {
+    path: "/work-report/history-detail",
+    name: "ReportHistoryDetail",
+    component: () => import("../pages/work-report/history-detail.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({
@@ -124,7 +136,7 @@ const router = createRouter({
   routes,
 });
 
-// 全局鉴权
+// 全局鉴权拦截
 router.beforeEach((to, from, next) => {
   const hasToken = storage.getStorageSync("Token");
   if (to.meta.requiresAuth !== false && !hasToken) {

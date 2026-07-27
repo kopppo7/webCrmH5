@@ -1,5 +1,13 @@
 <!-- src/pages/work-report/index.vue -->
 <template>
+  
+  
+  <van-nav-bar
+  :title="t('title.reportMenu')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container">
     <div class="header">
       <span class="title">{{ t('workReport.menu.title') }}</span>

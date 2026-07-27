@@ -1,5 +1,12 @@
 <!-- src/pages/work-report/weekly.vue -->
 <template>
+  
+  <van-nav-bar
+  :title="t('title.weeklyReport')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container">
     <div class="form-header">
       <span class="page-title">{{ t('workReport.weeklyPlan.title') }}</span>
@@ -85,7 +92,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { showToast } from 'vant';
+// 🌟 修复 1：正确引入 closeToast
+import { showToast, closeToast } from 'vant';
 import request from '../../utils/request';
 
 const router = useRouter();
@@ -151,15 +159,19 @@ const submitForm = async () => {
       plan_other: form.value.planOther || ''
     });
 
-    showToast.clear();
+    // 🌟 修复 2：使用正确的 Vant 关闭方法
+    closeToast();
     showToast({ type: 'success', message: t('workReport.weeklyPlan.submitSuccess', '计划提交成功！') });
     
+    // 成功后延时返回主页
     setTimeout(() => {
-      router.back();
+      router.replace('/')
     }, 1500);
 
   } catch (err) {
     console.error('提交周计划失败:', err);
+    // 🌟 修复 3：在 catch 里也加上 closeToast，防止哪怕真的网络报错了页面也一直卡住
+    closeToast();
     isSubmitting.value = false;
   }
 };

@@ -1,15 +1,13 @@
 <template>
   <div class="container">
-    <van-nav-bar
-      title="今日代办"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-      fixed
-      placeholder
-      :border="false"
-      class="custom-nav"
-    />
+    
+  
+  <van-nav-bar
+  :title="t('title.salesList')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <!-- 搜索栏 -->
     <div class="search-bar">

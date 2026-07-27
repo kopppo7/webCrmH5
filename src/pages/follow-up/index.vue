@@ -1,7 +1,14 @@
 <!-- src/pages/follow-up/index.vue -->
 <template>
+  
+  
+  <van-nav-bar
+  :title="t('title.followUp')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container-wrapper">
-    <van-nav-bar title="新增跟进记录" left-text="返回" left-arrow @click-left="router.back()" fixed placeholder />
     <div class="container">
       <div class="card">
         <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -161,7 +168,8 @@ onMounted(() => {
 
 const fetchInitData = async () => {
   try {
-    const res = await request.get("/api/follow-up/init-data", { params: { id: customerId.value } });
+    // ⚠️ 注意：接口路径已更新为统一的 /api/customers 路由下
+    const res = await request.get("/api/customers/follow-up/init-data", { params: { id: customerId.value } });
     if (res.data.profile) profile.value = { ...profile.value, ...res.data.profile };
     isKeyCustomer.value = res.data.is_key_customer || false;
     keyCustomerReason.value = res.data.key_customer_reason || "";
@@ -171,6 +179,7 @@ const fetchInitData = async () => {
     console.error("拉取现有画像失败", err);
   }
 };
+
 
 const toggleProfile = () => { isProfileExpanded.value = !isProfileExpanded.value; };
 
@@ -292,7 +301,8 @@ const submitFollowUp = async () => {
   showToast({ type: "loading", message: t("common.saving", "保存记录..."), duration: 0 });
 
   try {
-    await request.post("/api/follow-up/submit", {
+    // ⚠️ 注意：接口路径已更新为统一的 /api/customers 路由下
+    const res = await request.post("/api/customers/follow-up/submit", {
       customerId: customerId.value,
       status: selectedStatus.value,
       nextFollowUp: finalNextFollowUp,
@@ -307,16 +317,30 @@ const submitFollowUp = async () => {
       todayFirstLogId: todayFirstLogId.value,
     });
 
+    // 🌟 修复：使用正确的 closeToast 关闭 loading，防止卡死
     closeToast(); 
+
+    if (res.code && res.code !== 200) {
+      showToast(res.message || "提交失败");
+      isSubmitting.value = false;
+      return;
+    }
+
     if (isClosedWon.value) {
-      showDialog({ title: t("followUp.wonTitle", "恭喜成交"), message: t("followUp.wonMessage", "系统已记录成交明细！"), confirmButtonColor: "#10b981" }).then(() => router.back());
+      showDialog({ 
+        title: t("followUp.wonTitle", "恭喜成交"), 
+        message: t("followUp.wonMessage", "系统已记录成交明细！"), 
+        confirmButtonColor: "#10b981" 
+      }).then(() => router.back());
     } else {
       showToast({ type: "success", message: t("common.success", "保存成功") });
       setTimeout(() => router.back(), 1000);
     }
   } catch (err) {
-    isSubmitting.value = false;
+    // 🌟 修复：无论网络断开还是业务报错，确保解除加载卡死状态
     closeToast(); 
+    isSubmitting.value = false;
+    showToast(err.message || err.data?.message || t("common.error", "提交失败"));
   }
 };
 </script>

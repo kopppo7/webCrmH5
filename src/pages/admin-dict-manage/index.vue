@@ -1,15 +1,12 @@
 <template>
   <div class="dict-manager-container">
-    <van-nav-bar
-      :title="navTitle"
-      left-text="返回"
-      left-arrow
-      @click-left="handleBack"
-      fixed
-      placeholder
-      :border="false"
-      class="custom-nav"
-    />
+    
+  <van-nav-bar
+  :title="t('title.dictManage')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <!-- ================================================== -->
     <!-- 视图 1：字典分类大类 (Level 1) -->

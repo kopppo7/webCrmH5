@@ -1,11 +1,13 @@
 <template>
   <div class="admin-setting-container">
-      <van-nav-bar
-        title="设置"
-        left-text="返回"
-        left-arrow
-        @click-left="router.back()"
-      />
+    
+  
+  <van-nav-bar
+  :title="t('title.setting')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
       <van-cell-group inset style="margin-top: 20px">
         <van-cell
           title="销售团队管理"

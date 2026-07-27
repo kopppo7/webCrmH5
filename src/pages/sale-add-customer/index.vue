@@ -1,14 +1,14 @@
 <!-- src/pages/sale-add-customer/index.vue -->
 <template>
   <div class="container-wrapper">
-    <van-nav-bar
-      title="新增客户"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-      fixed
-      placeholder
-    />
+    
+  
+  <van-nav-bar
+  :title="t('title.saleAddCustomer')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
     <div class="container">
       <div class="card">
         <van-form @submit="submitCustomer">

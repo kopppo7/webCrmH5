@@ -1,15 +1,11 @@
 <template>
   <div class="assign-container">
-    <van-nav-bar
-      title="批量导入与分配"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-      fixed
-      placeholder
-      :border="false"
-      class="custom-nav"
-    />
+     <van-nav-bar
+  :title="t('title.assignCustomer')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <div class="main-content">
       <!-- 🌟 1. 产品品类选择 -->

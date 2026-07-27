@@ -1,5 +1,12 @@
 <!-- src/pages/work-report/history.vue -->
 <template>
+  
+  <van-nav-bar
+  :title="t('title.reportHistory')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container">
     <!-- 顶部分类 Tabs (使用 Vant 组件库) -->
     <van-tabs v-model:active="currentTab" @change="switchTab" color="#3b82f6" sticky>
@@ -38,7 +45,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { showToast } from 'vant';
+// 🌟 修复 1：正确引入 closeToast
+import { showToast, closeToast } from 'vant';
 import request from '../../utils/request';
 
 const router = useRouter();
@@ -63,15 +71,18 @@ const fetchData = async () => {
   showToast({ type: 'loading', message: t('common.loading', '加载中...'), duration: 0 });
 
   try {
+    // 调用后端历史记录接口
     const res = await request.get('/api/report/history', {
       params: { type: currentTab.value }
     });
     listData.value = res.data || [];
   } catch (err) {
     console.error('获取历史记录失败', err);
+    showToast(t('common.error', '加载失败'));
   } finally {
     isLoading.value = false;
-    showToast.clear();
+    // 🌟 修复 2：使用正确的 API 关闭加载动画
+    closeToast();
   }
 };
 
@@ -88,7 +99,6 @@ const goToDetail = (id) => {
   });
 };
 </script>
-
 <style scoped>
 /* 全局降级 rpx 为 px */
 .container {

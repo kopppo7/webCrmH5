@@ -15,7 +15,8 @@ export default {
     logout: '退出登录',
     logoutConfirmTitle: '提示',
     logoutConfirmMsg: '确定要退出当前账号并返回登录页吗？',
-    logoutSuccess: '已退出登录'
+    logoutSuccess: '已退出登录',
+    back: '返回'
   },
 
   status: {
@@ -23,6 +24,27 @@ export default {
     pending: "待处理",
     noAnswer: "未接通",
     busy: "忙碌",
+  },
+
+  
+  title: {
+    dailyReport: "填写日报",
+    reportDetail: "汇报详情",
+    reportHistory: "历史汇报",
+    reportMenu: "工作汇报",
+    weeklyReport: "周计划填写",
+    salesList: "客户列表",
+    saleAddCustomer: "手动添加客户",
+    followUp: "填写跟进记录",
+    allCustomers: "全部客户",
+    myCustomers: "我的客户",
+    customerDetail: "客户详情",
+    adminUserList: "团队管理",
+    setting: "设置",
+    dictManage: "字典管理",
+    customerPool: "查看客户池",
+    assignCustomer: "分配客户",
+    addUSer: "新增用户",
   },
   workReport: {
     menu: {
@@ -85,6 +107,17 @@ export default {
       validateNote: "请填写情况说明",
       submitConfirmMsg: "确认提交工作日报",
       submitSuccess: "日报提交成功！",
+    },
+    detail: {
+      title: "汇报详情",
+      unfinishedReason: "未完成原因",
+      rejectReason: "驳回理由",
+      approvalRemark: "审批备注",
+      dateLabel: "汇报日期",
+      weekLabel: "汇报周期",
+      pendingTodos: "遗留待办",
+      approvalHistory: "审批历史记录",
+      reEditBtn: "重新修改并提交"
     },
   },
   addCustomer: {

@@ -1,15 +1,13 @@
 <template>
   <div class="user-list-container">
-    <van-nav-bar
-      title="团队管理"
-      left-text="返回"
-      left-arrow
-      right-text="新增员工"
-      @click-left="router.back()"
-      @click-right="router.push('/admin-add-user')"
-      fixed
-      placeholder
-    />
+    
+  
+  <van-nav-bar
+  :title="t('title.adminUserList')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <!-- 员工列表 -->
     <div class="list-wrap">

@@ -1,5 +1,11 @@
 <!-- src/pages/work-report/daily.vue -->
 <template>
+  <van-nav-bar
+  :title="t('title.dailyReport')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
   <div class="container">
     <div class="form-header">
       <span class="page-title">{{ t('workReport.dailyReport.title') }}</span>
@@ -158,7 +164,8 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { showToast, showConfirmDialog } from 'vant';
+// 🌟 修复 1：正确引入 closeToast
+import { showToast, closeToast, showConfirmDialog } from 'vant';
 import request from '../../utils/request';
 
 const route = useRoute();
@@ -174,7 +181,6 @@ const listCallsArr = ref([]);
 const listVisitArr = ref([]);
 const listVideoArr = ref([]);
 
-// 弹窗状态管理
 const showModal = ref(false);
 const showCalendar = ref(false);
 const activeModal = ref('');
@@ -206,18 +212,16 @@ const loadEditData = async (id) => {
     reportDate.value = data.report_date;
     detailOther.value = data.detail_other || '';
     
-    // 兼容逻辑：若后端已按 JSON 数组返回则直接赋值，若是历史字符串则调用解析函数
     listCallsArr.value = Array.isArray(data.list_calls) ? data.list_calls : parseStringToArray(data.list_calls, 'call');
     listVisitArr.value = Array.isArray(data.list_visit) ? data.list_visit : parseStringToArray(data.list_visit, 'visit');
     listVideoArr.value = Array.isArray(data.list_video) ? data.list_video : parseStringToArray(data.list_video, 'video');
   } catch (err) {
     console.error('加载重填数据失败', err);
   } finally {
-    showToast.clear();
+    closeToast();
   }
 };
 
-// 兼容旧数据的字符串解析工具
 const parseStringToArray = (str, type) => {
   if (!str || str === '无' || str.trim() === '') return [];
   return str.split('\n').map(line => {
@@ -309,8 +313,7 @@ const submitForm = async () => {
     showToast({ type: 'loading', message: t('common.submitting', '保存中...'), duration: 0 });
 
     try {
-      // 不再在前端组装拼接字符串或查询数据库拦截，全部转交后端进行处理
-      await request.post('/api/report/daily/submit', {
+      const res = await request.post('/api/report/daily/submit', {
         editId: editId.value,
         reportDate: reportDate.value,
         listCalls: listCallsArr.value,
@@ -318,14 +321,30 @@ const submitForm = async () => {
         listVideo: listVideoArr.value,
         detailOther: detailOther.value
       });
+      
+      // 捕获拦截器未能截获的业务报错 (查重拦截)
+      if (res.code && res.code !== 200) {
+        closeToast();
+        showToast(res.message);
+        isSubmitting.value = false;
+        return;
+      }
 
-      showToast.clear();
+      // 🌟 修复 2：使用正确的 API 关闭加载动画
+      closeToast();
       showToast({ type: 'success', message: t('workReport.dailyReport.submitSuccess', '日报提交成功！') });
-      setTimeout(() => { router.back(); }, 1500);
+      
+      // 🌟 修复 3：不再使用后退，使用 replace 清理历史直接回到销售工作台主页
+      setTimeout(() => { 
+        router.replace('/'); 
+      }, 1000);
 
     } catch (err) {
       console.error('提交失败:', err);
-      // 后端可以返回特定的 HTTP 状态码或错误信息进行拦截提示（如查重拦截）
+      // 兜底保护
+      closeToast();
+      const errorMsg = err.message || err.data?.message || '提交失败';
+      showToast(errorMsg);
     } finally {
       isSubmitting.value = false;
     }

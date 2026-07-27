@@ -1,16 +1,12 @@
 <!-- src/pages/admin-customer-pool/index.vue -->
 <template>
   <div class="customer-pool-container">
-    <van-nav-bar
-      title="查看客户池"
-      left-text="返回"
-      left-arrow
-      @click-left="router.back()"
-      fixed
-      placeholder
-      :border="false"
-      class="custom-nav"
-    />
+  <van-nav-bar
+  :title="t('title.customerPool')"
+  :left-text="t('common.back')"
+  left-arrow
+  @click-left="router.back()"
+/>
 
     <!-- ================================================== -->
     <!-- 顶部固定筛选区 -->

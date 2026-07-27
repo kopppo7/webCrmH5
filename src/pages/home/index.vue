@@ -231,7 +231,7 @@ const goToAddCustomer = () => {
 
 const goToWorkReport = () => {
   if (checkDisabled()) return;
-  router.push("/report-menu");
+  router.push("/work-report");
 };
 </script>
 
