@@ -34,7 +34,7 @@
         <van-grid-item icon="cluster-o" text="分配客户" to="/admin-customer-assign" />
         <van-grid-item icon="friends-o" text="查看客户池" to="/admin-customer-pool" />
         <van-grid-item icon="chart-trending-o" text="销售报表" />
-        <van-grid-item icon="notes-o" text="工作报告" />
+        <van-grid-item icon="notes-o" text="工作报告" to="/admin-report" />
         <van-grid-item icon="orders-o" text="设备订单" />
         <van-grid-item icon="setting-o" text="系统设置" to="/admin-setting"  />
       </van-grid>

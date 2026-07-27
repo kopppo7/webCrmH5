@@ -128,7 +128,34 @@ const routes = [
     name: "ReportHistoryDetail",
     component: () => import("../pages/work-report/history-detail.vue"),
     meta: { requiresAuth: true },
+  },{
+    path: '/admin-report',
+    name: 'AdminReport',
+    // 🌟 将 @/pages 改为 ../pages
+    component: () => import('../pages/admin-report/index.vue'), 
+    meta: { title: '工作汇报', requiresAuth: true, role: 'admin' }
   },
+  {
+    path: '/admin-report/pending',
+    name: 'AdminReportPending',
+    // 🌟 将 @/pages 改为 ../pages
+    component: () => import('../pages/admin-report/pending.vue'),
+    meta: { title: '待审批汇报', requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin-report/history',
+    name: 'AdminReportHistory',
+    // 🌟 将 @/pages 改为 ../pages
+    component: () => import('../pages/admin-report/history.vue'),
+    meta: { title: '历史汇报', requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin-report/detail',
+    name: 'AdminReportDetail',
+    // 🌟 将 @/pages 改为 ../pages
+    component: () => import('../pages/admin-report/detail.vue'),
+    meta: { title: '汇报详情', requiresAuth: true, role: 'admin' }
+  }
 ];
 
 const router = createRouter({

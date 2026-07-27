@@ -1,12 +1,12 @@
 <!-- src/pages/admin-customer-pool/index.vue -->
 <template>
   <div class="customer-pool-container">
-  <van-nav-bar
-  :title="t('title.customerPool')"
-  :left-text="t('common.back')"
-  left-arrow
-  @click-left="router.back()"
-/>
+    <van-nav-bar
+      :title="t('title.customerPool', '客户池')"
+      :left-text="t('common.back', '返回')"
+      left-arrow
+      @click-left="router.back()"
+    />
 
     <!-- ================================================== -->
     <!-- 顶部固定筛选区 -->
@@ -48,9 +48,10 @@
             <div class="card-header">
               <div class="name-wrap">
                 <span class="customer-name">{{ item.name }}</span>
-                <van-tag plain :type="getStatusType(item.status)" size="small">
-                  {{ getStatusText(item.status) }}
-                </van-tag>
+                <!-- 🌟 统一使用动态字典与颜色池 -->
+                <span :class="['status-tag', `bg-status-${item.status || 'default'}`]">
+                  {{ localizedStatusMap[item.status] || item.status }}
+                </span>
               </div>
               <span class="date-text">{{ formatDateTime(item.created_at) }}</span>
             </div>
@@ -61,7 +62,7 @@
                 <van-icon name="phone-o" class="info-icon" />
                 <span class="info-text phone-text">{{ item.phone || '未留存电话' }}</span>
               </div>
-              <div class="info-row">
+              <div class="info-row" v-if="item.city">
                 <van-icon name="location-o" class="info-icon" />
                 <span class="info-text">{{ item.city || '未知城市' }}</span>
               </div>
@@ -78,7 +79,7 @@
                 <span class="sales-name">{{ item.sales_name || '未分配' }}</span>
               </div>
               <div class="source-info">
-                <van-tag color="#f0f7ff" text-color="#1989fa">{{ item.customer_source === 'operate_allocate' ? '运营分配' : item.customer_source }}</van-tag>
+                <span class="source-tag">{{ item.customer_source === 'operate_allocate' ? '运营分配' : (t(`dictSource.${item.customer_source}`) || item.customer_source) }}</span>
               </div>
             </div>
 
@@ -98,10 +99,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { showToast } from 'vant';
 import request from '../../utils/request';
 
 const router = useRouter();
+const { t, locale } = useI18n();
 
 // ================== 筛选器选项配置 ==================
 const timeOptions = [
@@ -111,15 +114,9 @@ const timeOptions = [
   { text: '本月分配', value: 'month' }
 ];
 
-const statusOptions = [
-  { text: '全部状态', value: '' },
-  { text: '待处理', value: 'pending' },
-  { text: '跟进中', value: 'following' },
-  { text: '已成交', value: 'deal' },
-  { text: '已流失', value: 'lost' }
-];
-
+const statusOptions = ref([{ text: '全部状态', value: '' }]);
 const salesOptions = ref([{ text: '全部销售', value: '' }]);
+const localizedStatusMap = ref({});
 
 // ================== 状态管理 ==================
 const keyword = ref('');
@@ -139,18 +136,40 @@ const pageSize = ref(15);
 
 // ================== 初始化 ==================
 onMounted(() => {
+  fetchStatusDict();
   fetchSalesList();
-  // 列表会在 van-list 初始化时自动调用 onLoad，因此这里不需要手动调 getList
+  // 列表会在 van-list 初始化时自动调用 onLoad，因此不需要手动调 getList
 });
 
-// 获取销售列表（用于填充下拉框）
+// 获取真实的动态状态字典
+const fetchStatusDict = async () => {
+  try {
+    const res = await request.get('/api/system/dict', { params: { type: 'customer_status' } });
+    const dictMap = {};
+    const options = [{ text: '全部状态', value: '' }];
+    
+    res.data.forEach(item => {
+      const dynamicKey = `label_${locale.value}`;
+      const labelText = item[dynamicKey] || item.label_zh || item.label;
+      dictMap[item.value] = labelText;
+      options.push({ text: labelText, value: item.value });
+    });
+    
+    localizedStatusMap.value = dictMap;
+    statusOptions.value = options;
+  } catch (e) {
+    console.error('获取动态状态字典失败', e);
+  }
+};
+
+// 获取销售列表
 const fetchSalesList = async () => {
   try {
-    const res = await request.get('/api/users/list');
+    const res = await request.get('/api/users/sales-list');
     if (res.data) {
       const sales = res.data.map(user => ({
-        text: user.real_name || user.username,
-        value: user._id
+        text: user.name || user.username,
+        value: user._openid || user.userId
       }));
       salesOptions.value = [{ text: '全部销售', value: '' }, ...sales];
     }
@@ -162,7 +181,6 @@ const fetchSalesList = async () => {
 // ================== 核心加载逻辑 ==================
 const getList = async () => {
   try {
-    // 组装查询参数
     const params = {
       page: page.value,
       pageSize: pageSize.value,
@@ -172,7 +190,6 @@ const getList = async () => {
       status: filterParams.value.status
     };
 
-    // 这里调用后续将在后端补充的统一带分页和多条件查询的 list 接口
     const res = await request.get('/api/customers/pool-list', { params });
     
     const rows = res.data?.rows || [];
@@ -187,7 +204,6 @@ const getList = async () => {
 
     loading.value = false;
 
-    // 判断是否全部加载完毕
     if (customerList.value.length >= total || rows.length === 0) {
       finished.value = true;
     } else {
@@ -207,9 +223,14 @@ const onLoad = () => {
 };
 
 const onRefresh = () => {
+  // 🌟 核心修复：必须主动开启刷新状态。
+  // 这样底部的 getList 请求回来后，才会用新数据彻底覆盖旧数据，而不是无脑 push 追加。
+  refreshing.value = true; 
+  
   finished.value = false;
   loading.value = true;
   page.value = 1;
+  
   getList();
 };
 
@@ -222,31 +243,10 @@ const onFilterChange = () => {
 };
 
 const goToDetail = (id) => {
-  // 预留跳转到客户详情时间轴页面的逻辑
-  // router.push(`/customer-detail?id=${id}`);
+  router.push(`/customer-detail?id=${id}`);
 };
 
 // ================== 工具函数 ==================
-const getStatusText = (status) => {
-  const map = {
-    pending: '待处理',
-    following: '跟进中',
-    deal: '已成交',
-    lost: '已流失'
-  };
-  return map[status] || '未知状态';
-};
-
-const getStatusType = (status) => {
-  const map = {
-    pending: 'primary',
-    following: 'warning',
-    deal: 'success',
-    lost: 'danger'
-  };
-  return map[status] || 'default';
-};
-
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -266,7 +266,7 @@ const formatDateTime = (dateStr) => {
 /* 顶部吸顶搜索与筛选区 */
 .sticky-header {
   position: sticky;
-  top: 46px; /* van-nav-bar 的默认高度 */
+  top: 46px; 
   z-index: 99;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -322,6 +322,22 @@ const formatDateTime = (dateStr) => {
   color: #c8c9cc;
 }
 
+/* 🌟 统一的颜色字典池 */
+.status-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+.bg-status-deal_completed { background: #d1fae5 !important; color: #10b981 !important; }
+.bg-status-clear_reject { background: #fee2e2 !important; color: #ef4444 !important; }
+.bg-status-pending { background: #e0f2fe !important; color: #0284c7 !important; }
+.bg-status-following, .bg-status-appointment_machine_v { background: #ede9fe !important; color: #8b5cf6 !important; }
+.bg-status-missed_call, .bg-status-cannot_answer_call { background: #fef3c7 !important; color: #d97706 !important; }
+.bg-status-invalid_lead { background: #f3f4f6 !important; color: #9ca3af !important; }
+.bg-status-default { background: #f3f4f6 !important; color: #4b5563 !important; }
+
+
 /* 卡片主体 */
 .card-body {
   display: flex;
@@ -355,7 +371,6 @@ const formatDateTime = (dateStr) => {
 }
 .requirement-text {
   color: #646566;
-  /* 多行截断 */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -375,5 +390,12 @@ const formatDateTime = (dateStr) => {
   font-size: 13px;
   color: #1989fa;
   font-weight: 500;
+}
+.source-tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: #f0f7ff;
+  color: #1989fa;
+  border-radius: 4px;
 }
 </style>
