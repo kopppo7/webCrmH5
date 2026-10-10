@@ -1,13 +1,11 @@
 <!-- src/pages/follow-up/index.vue -->
 <template>
-  
-  
   <van-nav-bar
-  :title="t('title.followUp')"
-  :left-text="t('common.back')"
-  left-arrow
-  @click-left="router.back()"
-/>
+    :title="t('title.followUp')"
+    :left-text="t('common.back')"
+    left-arrow
+    @click-left="router.back()"
+  />
   <div class="container-wrapper">
     <div class="container">
       <div class="card">
@@ -71,12 +69,32 @@
         </div>
 
         <!-- 智能显隐: 截图/图片上传 -->
-        <div class="form-item column" v-if="isRoutineFollowUp || isNoAnswer">
+        <div class="form-item column" v-if="isRoutineFollowUp || isNoAnswer || isClosedLost">
           <div style="width: 100%; margin-bottom: 8px">
-            <span v-if="isRoutineFollowUp || (isNoAnswer && todayNoAnswerCount >= 1)" class="required-star" style="margin-right: 4px;">*</span>
+            <span
+              v-if="isRoutineFollowUp || isClosedLost || (isNoAnswer && todayNoAnswerCount >= 1)"
+              class="required-star"
+              style="margin-right: 4px;"
+            >*</span>
             <span class="label">{{ t("followUp.uploadFiles", "上传截图") }}</span>
-            <span v-if="isNoAnswer && todayNoAnswerCount >= 1" style="font-size: 11px; color: #999; margin-left: 8px;">多次未接须提供截图凭证</span>
-            <span v-if="isNoAnswer && todayNoAnswerCount === 0" style="font-size: 11px; color: #999; margin-left: 8px;">首次未接为选填</span>
+            <span
+              v-if="isClosedLost"
+              style="font-size: 11px; color: #999; margin-left: 8px;"
+            >
+              明确拒绝必须上传沟通截图凭证
+            </span>
+            <span
+              v-else-if="isNoAnswer && todayNoAnswerCount >= 1"
+              style="font-size: 11px; color: #999; margin-left: 8px;"
+            >
+              多次未接须提供截图凭证
+            </span>
+            <span
+              v-else-if="isNoAnswer && todayNoAnswerCount === 0"
+              style="font-size: 11px; color: #999; margin-left: 8px;"
+            >
+              首次未接为选填；当天第3次未接后自动安排次日跟进
+            </span>
           </div>
           <van-uploader v-model="fileList" multiple :max-count="3" :after-read="afterRead" />
         </div>
@@ -168,7 +186,6 @@ onMounted(() => {
 
 const fetchInitData = async () => {
   try {
-    // ⚠️ 注意：接口路径已更新为统一的 /api/customers 路由下
     const res = await request.get("/api/customers/follow-up/init-data", { params: { id: customerId.value } });
     if (res.data.profile) profile.value = { ...profile.value, ...res.data.profile };
     isKeyCustomer.value = res.data.is_key_customer || false;
@@ -179,7 +196,6 @@ const fetchInitData = async () => {
     console.error("拉取现有画像失败", err);
   }
 };
-
 
 const toggleProfile = () => { isProfileExpanded.value = !isProfileExpanded.value; };
 
@@ -221,66 +237,133 @@ const onDateConfirm = (date) => {
   showDatePicker.value = false;
 };
 
-const afterRead = async (file) => {
-  file.status = "uploading";
-  file.message = t("common.uploading", "上传中");
-  try {
-    const formData = new FormData();
-    formData.append("file", file.file);
-    const res = await request.post("/api/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
-    file.url = res.url;
-    file.status = "done";
-  } catch (err) {
-    file.status = "failed";
-    file.message = t("common.uploadFailed", "上传失败");
+// ==========================================
+// 🌟 新增：纯前端图片压缩方法 
+// ==========================================
+const compressImage = (file, quality = 0.7) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = img.width;
+        let height = img.height;
+        const maxWidth = 1280; // 设置最大宽度，防止超大图导致内存溢出
+        
+        if (width > maxWidth) {
+          height = Math.round(height * maxWidth / width);
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 绘制白色背景，防止透明PNG转JPEG时出现黑底
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            // 封装回 File 对象
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg", // 统一转为jpeg获得更好的体积压缩
+          quality
+        );
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// ==========================================
+// 🌟 修改：支持压缩后再上传的逻辑 
+// ==========================================
+const afterRead = async (fileObj) => {
+  // 独立处理单张图片的函数
+  const processSingleFile = async (item) => {
+    item.status = "uploading";
+    item.message = t("common.uploading", "上传中");
+    
+    try {
+      let actualFile = item.file;
+
+      // 如果是图片格式，且大小超过 500KB，则进行压缩
+      if (actualFile.type.startsWith("image/") && actualFile.size > 500 * 1024) {
+        actualFile = await compressImage(actualFile, 0.7); // 质量设置为 0.7
+      }
+
+      const formData = new FormData();
+      formData.append("file", actualFile);
+      
+      const res = await request.post("/api/upload", formData, { 
+        headers: { "Content-Type": "multipart/form-data" } 
+      });
+      
+      item.url = res.url;
+      item.status = "done";
+    } catch (err) {
+      item.status = "failed";
+      item.message = t("common.uploadFailed", "上传失败");
+    }
+  };
+
+  // 兼容 Vant 在多选时传入数组的情况
+  if (Array.isArray(fileObj)) {
+    await Promise.all(fileObj.map(item => processSingleFile(item)));
+  } else {
+    await processSingleFile(fileObj);
   }
 };
 
 const submitFollowUp = async () => {
-  // ==========================================
-  // 🌟 核心拦截：动态必填项强校验逻辑
-  // ==========================================
-
-  // 1. 基础状态校验
   if (!selectedStatus.value) return showToast(t("followUp.validateStatus", "请选择跟进结果"));
   
-  // 2. 重点客户原因必填
   if (isKeyCustomer.value && !keyCustomerReason.value.trim()) return showToast(t("followUp.validateKeyReason", "请填写重点客户原因"));
 
-  // 3. 已成交专属表单必填
   if (isClosedWon.value) {
     if (!dealCategory.value) return showToast(t("followUp.validateDealCat", "请选择成交机型"));
     if (!dealModel.value.trim()) return showToast(t("followUp.validateDealModel", "请输入产品型号"));
     if (!transactionAmount.value) return showToast(t("followUp.validateAmount", "请输入成交金额"));
   }
 
-  // 4. 沟通详述必填（只要显示了文本框就必须填）
   if ((isRoutineFollowUp.value || isClosedWon.value || isClosedLost.value) && !note.value.trim()) {
     return showToast(t("followUp.validateNote", "请填写沟通详述"));
   }
 
-  // 5. 下次跟进时间必填（常规跟进时显示）
   if (isRoutineFollowUp.value && !nextFollowUp.value) {
     return showToast(t("followUp.validateNextTime", "请选择下次跟进时间"));
   }
 
-  // 6. 截图上传必填校验
   const uploadedUrls = fileList.value.filter((f) => f.status === "done").map((f) => f.url);
+
   if (isRoutineFollowUp.value) {
-    // 常规跟进：只要显示了截图框就必填
-    if (uploadedUrls.length === 0) return showToast(t("followUp.validateImage", "请上传沟通截图"));
+    if (uploadedUrls.length === 0) {
+      return showToast(t("followUp.validateImage", "请上传沟通截图"));
+    }
+  } else if (isClosedLost.value) {
+    // 明确拒绝必须上传截图凭证
+    if (uploadedUrls.length === 0) {
+      return showToast("明确拒绝必须上传沟通截图凭证");
+    }
   } else if (isNoAnswer.value && todayNoAnswerCount.value > 0) {
-    // 多次未接：强制上传截图凭证
-    if (uploadedUrls.length === 0) return showToast(t("followUp.validateImage", "多次未接必须上传通话记录截图"));
+    if (uploadedUrls.length === 0) {
+      return showToast(t("followUp.validateImage", "多次未接必须上传通话记录截图"));
+    }
   }
 
-  // ==========================================
-  // 数据组装与提交
-  // ==========================================
   let finalNote = note.value;
   let finalNextFollowUp = nextFollowUp.value;
 
-  // 终结状态清空日期
   if (isInvalid.value || isClosedWon.value || isClosedLost.value) {
     finalNextFollowUp = "";
   }
@@ -289,8 +372,10 @@ const submitFollowUp = async () => {
     finalNote = finalNote || t("followUp.autoInvalidNote", "标记为无效线索");
   } else if (isNoAnswer.value) {
     finalNote = ""; 
-    // 多次未接自动推迟时间
-    if (todayNoAnswerCount.value > 0 && !finalNextFollowUp) {
+    // 当天第 3 次未接电话后，自动把下次跟进安排到第二天。
+    // todayNoAnswerCount 是提交本次记录前已有的次数：
+    // 0=第1次，1=第2次，2=第3次，因此这里判断 >= 2。
+    if (todayNoAnswerCount.value >= 2 && !finalNextFollowUp) {
       const tmr = new Date();
       tmr.setDate(tmr.getDate() + 1);
       finalNextFollowUp = `${tmr.getFullYear()}-${String(tmr.getMonth() + 1).padStart(2, "0")}-${String(tmr.getDate()).padStart(2, "0")}`;
@@ -301,7 +386,6 @@ const submitFollowUp = async () => {
   showToast({ type: "loading", message: t("common.saving", "保存记录..."), duration: 0 });
 
   try {
-    // ⚠️ 注意：接口路径已更新为统一的 /api/customers 路由下
     const res = await request.post("/api/customers/follow-up/submit", {
       customerId: customerId.value,
       status: selectedStatus.value,
@@ -317,7 +401,6 @@ const submitFollowUp = async () => {
       todayFirstLogId: todayFirstLogId.value,
     });
 
-    // 🌟 修复：使用正确的 closeToast 关闭 loading，防止卡死
     closeToast(); 
 
     if (res.code && res.code !== 200) {
@@ -337,7 +420,6 @@ const submitFollowUp = async () => {
       setTimeout(() => router.back(), 1000);
     }
   } catch (err) {
-    // 🌟 修复：无论网络断开还是业务报错，确保解除加载卡死状态
     closeToast(); 
     isSubmitting.value = false;
     showToast(err.message || err.data?.message || t("common.error", "提交失败"));

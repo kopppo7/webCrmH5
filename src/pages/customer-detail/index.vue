@@ -134,30 +134,34 @@
           </div>
 
           <div class="log-images" v-if="item.images && item.images.length > 0">
-            <img 
-              v-for="img in item.images" 
-              :key="img" 
-              :src="img" 
-              class="log-img" 
-              @click="previewImage(img, item.images)" 
-            />
+            <div v-for="img in item.images" :key="img">
+
+    <img 
+      :src="img" 
+      class="log-img"
+      @click="previewImage(img, item.images)" 
+    />
+  </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ================= 4. 底部固定按钮组 ================= -->
-    <div class="footer-action" v-if="customer._id">
+    <!-- 🌟 修复：仅当是管理员 或 从待办列表进入时，才显示底部栏容器 -->
+    <div class="footer-action" v-if="customer._id && (isAdmin || isFromTodo)">
       <div class="btn-group">
         <van-button 
           v-if="isAdmin" 
           class="reassign-btn" 
-          @click="showReassignPicker = true"
+          @click="openReassignPicker"
         >
           {{ t('customerDetail.reassign', '重新分配') }}
         </van-button>
         
+        <!-- 🌟 修复：新增 v-if 判断，只允许待办列表来源显示此按钮 -->
         <van-button 
+          v-if="isFromTodo"
           class="follow-btn" 
           @click="goToFollowUp"
         >
@@ -168,14 +172,77 @@
 
     <!-- ================= 5. 弹窗系列 ================= -->
     
-    <van-popup v-model:show="showReassignPicker" position="bottom" round>
+    <!-- 重新处理 / 重新分配 -->
+    <van-popup
+      v-model:show="showReassignPicker"
+      position="bottom"
+      round
+      class="reprocess-popup"
+    >
+      <div class="reprocess-panel">
+        <div class="reprocess-header">
+          <div>
+            <div class="reprocess-title">重新处理客户</div>
+            <div class="reprocess-subtitle">重新处理后客户状态将重置为待处理</div>
+          </div>
+          <van-icon name="cross" size="20" @click="showReassignPicker = false" />
+        </div>
+
+        <div class="reprocess-form-item" @click="showReassignSalesPicker = true">
+          <span class="reprocess-label">处理销售</span>
+          <div class="reprocess-value">
+            {{ reassignSalesName || '请选择销售' }}
+            <van-icon name="arrow" color="#969799" />
+          </div>
+        </div>
+
+        <div class="reprocess-form-item" @click="showReassignDatePicker = true">
+          <span class="reprocess-label">下次跟进</span>
+          <div :class="['reprocess-value', { 'reprocess-placeholder': !reassignNextFollowUp }]">
+            {{ reassignNextFollowUp || '请选择下次跟进日期' }}
+            <van-icon name="arrow" color="#969799" />
+          </div>
+        </div>
+
+        <div class="reprocess-note-box">
+          <div class="reprocess-note-label">重新处理意见（选填）</div>
+          <textarea
+            v-model.trim="reassignOpinion"
+            class="reprocess-note-input"
+            placeholder="例如：客户需求尚未确认，请重新联系并重点确认采购时间"
+          ></textarea>
+          <div class="reprocess-note-tip">
+            未填写时，时间轴将自动记录系统重新处理信息。
+          </div>
+        </div>
+
+        <div class="reprocess-footer">
+          <van-button block @click="showReassignPicker = false">取消</van-button>
+          <van-button
+            block
+            type="primary"
+            :loading="reassignSubmitting"
+            @click="submitReprocess"
+          >
+            确认重新处理
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
+
+    <van-popup v-model:show="showReassignSalesPicker" position="bottom" round>
       <van-picker
-        :title="t('customerDetail.reassignTitle', '选择销售')"
+        title="选择处理销售"
         :columns="salesOptions"
-        @confirm="onReassignConfirm"
-        @cancel="showReassignPicker = false"
+        @confirm="onReassignSalesConfirm"
+        @cancel="showReassignSalesPicker = false"
       />
     </van-popup>
+
+    <van-calendar
+      v-model:show="showReassignDatePicker"
+      @confirm="onReassignDateConfirm"
+    />
 
     <van-popup v-model:show="showProfileModal" position="bottom" round class="custom-popup">
       <div class="modal-header">{{ t('customerDetail.editProfileTitle', '编辑画像') }}</div>
@@ -219,6 +286,7 @@ import { showToast, closeToast, showImagePreview, showConfirmDialog } from 'vant
 import request from '../../utils/request';
 import { storage } from '../../utils/storage';
 
+const isFromTodo = computed(() => route.query.from === 'todo');
 const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -236,9 +304,24 @@ const editProfileForm = ref({});
 const showGlobalTransModal = ref(false);
 const globalTransText = ref('');
 const showReassignPicker = ref(false);
+const showReassignSalesPicker = ref(false);
+const showReassignDatePicker = ref(false);
+const reassignSalesId = ref("");
+const reassignSalesName = ref("");
+const reassignOpinion = ref("");
+const reassignNextFollowUp = ref("");
+const reassignSubmitting = ref(false);
 
 const salesOptions = computed(() => {
-  return salesList.value.map(sales => ({ text: sales.name, value: sales._openid || sales.userId }));
+  return salesList.value
+    .map(sales => ({
+      // /api/users/sales-list 当前主要返回 MongoDB 用户结构：
+      // 姓名字段通常是 real_name，ID 字段通常是 _id。
+      // 同时保留旧字段兼容，避免不同环境下再次出现空列表/空白项。
+      text: sales.real_name || sales.name || sales.username || '未命名销售',
+      value: String(sales._id || sales._openid || sales.userId || '')
+    }))
+    .filter(item => item.value);
 });
 
 onMounted(() => {
@@ -276,9 +359,15 @@ const fetchStatusDict = async () => {
 const fetchSalesList = async () => {
   try {
     const res = await request.get('/api/users/sales-list');
-    salesList.value = res.data || [];
+    salesList.value = Array.isArray(res.data) ? res.data : [];
+
+    if (salesList.value.length === 0) {
+      showToast('暂无可分配的销售人员');
+    }
   } catch (err) {
     console.error('获取销售列表失败', err);
+    salesList.value = [];
+    showToast('销售人员列表加载失败');
   }
 };
 
@@ -357,35 +446,101 @@ const saveGlobalTranslation = async () => {
   }
 };
 
-const onReassignConfirm = ({ selectedOptions }) => {
-  const newSales = selectedOptions[0];
-  const oldSalesName = customer.value.sales_name || customer.value.assigned_sales_name || '未分配';
-  
-  if (newSales.value === customer.value.assigned_sales_id) {
-    showToast('该客户已属于此人');
+const formatDateForFollowUp = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const openReassignPicker = async () => {
+  if (salesList.value.length === 0) {
+    await fetchSalesList();
+  }
+
+  if (salesOptions.value.length === 0) {
+    showToast('暂无可分配的销售人员');
     return;
   }
 
-  showConfirmDialog({
-    title: t('customerDetail.reassignConfirmTitle', '确认分配'),
-    message: `确定将客户从 [${oldSalesName}] 重新分配给 [${newSales.text}] 吗？`,
-  }).then(async () => {
-    showToast({ type: 'loading', message: '分配中...', duration: 0 });
-    try {
-      await request.post('/api/customers/reassign', {
-        id: customerId.value,
-        assigned_sales_id: newSales.value,
-        sales_name: newSales.text,
-        old_sales_name: oldSalesName
-      });
-      showReassignPicker.value = false;
-      showToast({ type: 'success', message: '分配成功' });
-      initData();
-    } catch (error) {
-      console.error(error);
-      closeToast();
-    }
-  }).catch(() => {});
+  // 默认当前销售，不再要求必须换人。
+  // “重新处理”允许仍交给原销售，相当于管理员驳回后要求重新跟进。
+  const currentSalesId = String(customer.value.assigned_sales_id || '');
+  const currentSalesName =
+    customer.value.sales_name ||
+    customer.value.assigned_sales_name ||
+    '';
+
+  const currentOption = salesOptions.value.find(
+    item => String(item.value) === currentSalesId
+  );
+
+  reassignSalesId.value = currentOption?.value || currentSalesId || salesOptions.value[0]?.value || '';
+  reassignSalesName.value = currentOption?.text || currentSalesName || salesOptions.value[0]?.text || '';
+  reassignOpinion.value = '';
+
+  // 下次跟进时间沿用销售跟进页的 YYYY-MM-DD 逻辑。
+  // 如果客户已有未来跟进日期，则默认带出；否则留空由管理员选择。
+  reassignNextFollowUp.value =
+    customer.value.next_follow_up && customer.value.next_follow_up !== 'none'
+      ? String(customer.value.next_follow_up).slice(0, 10)
+      : '';
+
+  showReassignPicker.value = true;
+};
+
+const onReassignSalesConfirm = ({ selectedOptions }) => {
+  const option = selectedOptions?.[0];
+  if (!option) return;
+
+  reassignSalesId.value = option.value;
+  reassignSalesName.value = option.text;
+  showReassignSalesPicker.value = false;
+};
+
+const onReassignDateConfirm = (date) => {
+  reassignNextFollowUp.value = formatDateForFollowUp(date);
+  showReassignDatePicker.value = false;
+};
+
+const submitReprocess = async () => {
+  if (!reassignSalesId.value) {
+    return showToast('请选择处理销售');
+  }
+
+  if (!reassignNextFollowUp.value) {
+    return showToast('请选择下次跟进时间');
+  }
+
+  const oldSalesName =
+    customer.value.sales_name ||
+    customer.value.assigned_sales_name ||
+    '未分配';
+
+  reassignSubmitting.value = true;
+  showToast({ type: 'loading', message: '提交重新处理中...', duration: 0 });
+
+  try {
+    await request.post('/api/customers/reassign', {
+      id: customerId.value,
+      assigned_sales_id: reassignSalesId.value,
+      sales_name: reassignSalesName.value,
+      old_sales_name: oldSalesName,
+      opinion: reassignOpinion.value.trim(),
+      next_follow_up: reassignNextFollowUp.value
+    });
+
+    closeToast();
+    showReassignPicker.value = false;
+    showToast({ type: 'success', message: '已提交重新处理' });
+    await initData();
+  } catch (error) {
+    console.error('重新处理失败', error);
+    closeToast();
+    showToast(error?.message || '重新处理失败');
+  } finally {
+    reassignSubmitting.value = false;
+  }
 };
 
 const copyAllContext = async () => {
@@ -598,4 +753,100 @@ const previewImage = (currentImg, allImages) => {
 .btn-cancel, .btn-save { flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 20px; font-size: 15px; cursor: pointer;}
 .btn-cancel { background: #f5f5f5; color: #666; }
 .btn-save { background: #07c160; color: #fff; flex: 2; }
+
+/* 重新处理弹窗 */
+.reprocess-popup {
+  max-height: 86vh;
+}
+
+.reprocess-panel {
+  padding: 18px 16px 16px;
+  box-sizing: border-box;
+}
+
+.reprocess-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.reprocess-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #323233;
+}
+
+.reprocess-subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #969799;
+}
+
+.reprocess-form-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  border-bottom: 1px solid #f2f3f5;
+  cursor: pointer;
+}
+
+.reprocess-label {
+  font-size: 14px;
+  color: #323233;
+}
+
+.reprocess-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 68%;
+  font-size: 14px;
+  color: #1989fa;
+  text-align: right;
+}
+
+.reprocess-placeholder {
+  color: #969799;
+}
+
+.reprocess-note-box {
+  margin-top: 14px;
+}
+
+.reprocess-note-label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #323233;
+}
+
+.reprocess-note-input {
+  width: 100%;
+  min-height: 92px;
+  padding: 10px;
+  border: 1px solid #ebedf0;
+  border-radius: 8px;
+  background: #f7f8fa;
+  box-sizing: border-box;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.reprocess-note-tip {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #969799;
+}
+
+.reprocess-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 </style>

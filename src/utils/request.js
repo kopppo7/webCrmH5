@@ -5,7 +5,9 @@ import router from '../router';
 import { showToast, showDialog } from 'vant';
 
 const service = axios.create({
-  baseURL: 'http://localhost:3000', 
+  baseURL: '',
+  // baseURL: 'http://43.133.112.157:3000',
+  // baseURL: 'https://51f736d5.r12.cpolar.top', 
   timeout: 15000,
 });
 

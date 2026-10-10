@@ -5,7 +5,7 @@
   :title="t('title.dictManage')"
   :left-text="t('common.back')"
   left-arrow
-  @click-left="router.back()"
+  @click-left="handleBack"
 />
 
     <!-- ================================================== -->
@@ -168,6 +168,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast, showConfirmDialog } from 'vant';
 import request from '../../utils/request';
+import { useI18n } from "vue-i18n";
 
 const router = useRouter();
 
@@ -175,6 +176,7 @@ const router = useRouter();
 const currentView = ref('category'); 
 const dictCategories = ref([]); 
 const dictList = ref([]); 
+const { t } = useI18n();
 
 const activeCategoryType = ref('');
 const activeCategoryTitle = ref('');
@@ -244,6 +246,16 @@ const onCatSubmit = async () => {
   }
 };
 
+const handleBack = () => {
+  
+  if (currentView.value === 'items') {
+    currentView.value = 'category';
+    dictList.value = [];
+  } else {
+  router.push('/');
+  }
+};
+
 const handleDeleteCategory = (id) => {
   showConfirmDialog({ title: '危险操作', message: '确认删除该分类吗？相关数据可能会失效。' }).then(async () => {
     try {
@@ -262,14 +274,6 @@ const enterCategory = (cat) => {
   fetchItems();
 };
 
-const handleBack = () => {
-  if (currentView.value === 'items') {
-    currentView.value = 'category';
-    dictList.value = [];
-  } else {
-    router.back();
-  }
-};
 
 const fetchItems = async () => {
   try {

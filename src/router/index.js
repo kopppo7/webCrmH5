@@ -155,7 +155,18 @@ const routes = [
     // 🌟 将 @/pages 改为 ../pages
     component: () => import('../pages/admin-report/detail.vue'),
     meta: { title: '汇报详情', requiresAuth: true, role: 'admin' }
-  }
+  },
+  
+  // ==========================================
+  // 销售数据分析 (完全对齐当前目录结构)
+  // ==========================================
+  {
+    path: '/sales-data',
+    name: 'SalesData',
+    // 🌟 将 @/pages 改为 ../pages
+    component: () => import('../pages/sales-data/index.vue'),
+    meta: { title: '汇报详情', requiresAuth: true }
+  },
 ];
 
 const router = createRouter({

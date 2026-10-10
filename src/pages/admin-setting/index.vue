@@ -6,7 +6,7 @@
   :title="t('title.setting')"
   :left-text="t('common.back')"
   left-arrow
-  @click-left="router.back()"
+  @click-left="handleBack"
 />
       <van-cell-group inset style="margin-top: 20px">
         <van-cell
@@ -42,6 +42,10 @@ import { storage } from "../../utils/storage";
 
 const router = useRouter();
 const { t } = useI18n();
+
+const handleBack = () => {
+  router.push('/');
+};
 
 // 退出登录逻辑
 const handleLogout = () => {

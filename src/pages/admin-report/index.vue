@@ -5,7 +5,7 @@
       :title="t('title.adminReport')"
       :left-text="t('common.back')"
       left-arrow
-      @click-left="router.back()"
+      @click-left="handleBack"
       fixed
       placeholder
     />
@@ -88,6 +88,10 @@ const pendingCounts = ref({
   dailyPending: 0,
   weeklyPending: 0
 });
+
+const handleBack = () => {
+  router.push('/');
+};
 
 // 获取待审批数量角标
 const fetchPendingCounts = async () => {

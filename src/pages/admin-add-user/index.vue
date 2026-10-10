@@ -1,10 +1,11 @@
 <template>
-  <div class="add-user-container"> <van-nav-bar
-  :title="t('title.addUSer')"
-  :left-text="t('common.back')"
-  left-arrow
-  @click-left="router.back()"
-/>
+  <div class="add-user-container">
+    <van-nav-bar
+      :title="t('title.addUSer')"
+      :left-text="t('common.back')"
+      left-arrow
+      @click-left="handleBack"
+    />
 
     <van-form @submit="onSubmit">
       <van-cell-group title="基础信息">
@@ -125,12 +126,13 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n"; // 👈 新增这行
 import { showToast } from "vant";
 import request from "../../utils/request";
 
 const router = useRouter();
 const route = useRoute();
-
+const { t } = useI18n(); // 👈 新增这行，解构出 t 函数
 const isView = computed(() => route.query.mode === "view");
 const isEdit = computed(() => route.query.mode === "edit");
 const targetId = route.query.id; // 编辑/查看模式下会有 ID
@@ -175,11 +177,11 @@ onMounted(async () => {
       const res = await request.get(`/api/users/detail?id=${targetId}`);
       // 将后端数据填入表单
       Object.assign(form.value, res.data);
-      
+
       // 🌟 核心修复点：根据 position 的值，去字典里匹配出中文 Label
       if (form.value.position && positionOptions.value.length > 0) {
         const matchedOption = positionOptions.value.find(
-          (opt) => opt.value === form.value.position
+          (opt) => opt.value === form.value.position,
         );
         if (matchedOption) {
           form.value.positionLabel = matchedOption.text;
@@ -237,6 +239,9 @@ const onSubmit = async () => {
   } catch (err) {
     showToast("操作失败");
   }
+};
+const handleBack = () => {
+  router.push("/");
 };
 </script>
 

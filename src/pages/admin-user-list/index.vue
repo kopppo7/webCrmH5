@@ -1,13 +1,13 @@
 <template>
   <div class="user-list-container">
-    
-  
-  <van-nav-bar
-  :title="t('title.adminUserList')"
-  :left-text="t('common.back')"
-  left-arrow
-  @click-left="router.back()"
-/>
+    <van-nav-bar
+      :title="t('title.adminUserList')"
+      :left-text="t('common.back')"
+      right-text="新增"
+      left-arrow
+      @click-left="router.back()"
+      @click-right="handleAdd"
+    />
 
     <!-- 员工列表 -->
     <div class="list-wrap">
@@ -102,9 +102,11 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { showToast, showConfirmDialog } from "vant";
 import request from "../../utils/request";
+import { useI18n } from "vue-i18n"; // 👈 新增这行
 
 const router = useRouter();
 const userList = ref([]);
+const { t } = useI18n();
 
 // 离职弹窗控制
 const showResignDialog = ref(false);
@@ -118,6 +120,13 @@ const fetchList = async () => {
   } catch (error) {
     showToast("列表获取失败");
   }
+};
+
+const handleAdd = () => {
+  router.push({
+    path: "/admin-add-user",
+    query: { mode: 'add' } 
+  });
 };
 
 onMounted(() => {

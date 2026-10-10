@@ -89,22 +89,49 @@
         <div class="card-arrow">&gt;</div>
       </div>
 
-      <div class="form-section">
-        <div class="section-title">
-          <span class="icon">⚙️</span>
-          <span>{{ t("common.settings", "设置") }}</span>
+      <!-- 阿才专属：销售数据 -->
+<div
+  v-if="isAcai"
+  :class="['menu-card', { 'disabled-card': isDisabled }]"
+  @click="goToSalesData"
+>
+  <div class="card-left">
+    <div
+      class="icon-box"
+      style="background-color: #e6f4ff; color: #1989fa"
+    >
+      📈
+    </div>
+
+    <div class="card-text">
+      <span class="menu-name">
+        {{ t("title.salesData", "销售数据") }}
+      </span>
+
+      <span class="menu-desc">
+        查看团队数据与销售分析
+      </span>
+    </div>
+  </div>
+
+  <div class="card-arrow">&gt;</div>
+</div>
+
+      <!-- 底部设置与退出区 -->
+      <div class="settings-section">
+        <div class="section-divider">
+          <span class="line"></span>
+          <span class="text">{{ t("common.settings", "系统设置") }}</span>
+          <span class="line"></span>
         </div>
 
-        <van-cell-group inset>
-          <van-cell
-            :title="t('common.logout', '退出登录')"
-            icon="revoke"
-            is-link
-            @click="handleLogout"
-            title-style="color: #ef4444; font-weight: bold;"
-          />
-        </van-cell-group>
+        <div class="logout-card" @click="handleLogout">
+          <van-icon name="revoke" class="logout-icon" />
+          <span class="logout-text">{{ t('common.logout', '退出登录') }}</span>
+        </div>
       </div>
+
+
     </div>
   </div>
 </template>
@@ -126,6 +153,8 @@ const isVisitor = ref(true);
 const isDisabled = ref(false);
 const todoCount = ref(0);
 
+// 阿才专属权限
+const isAcai = ref(false);
 // 生命周期替代：在页面挂载和每次从其他页面返回时触发 (对应 onShow)
 onMounted(() => {
   initPage();
@@ -151,26 +180,37 @@ const switchLang = () => {
   document.title = t("home.title"); // 替代 wx.setNavigationBarTitle
 };
 
-// 身份权限校验与路由拦截
+const goToSalesData = () => {
+  console.log("点击销售数据分析");
+
+  if (checkDisabled()) return;
+
+  router.push("/sales-data");
+};
 const checkUserRole = () => {
   const userInfo = storage.getStorageSync("UserInfo");
+
   if (!userInfo) {
     isVisitor.value = true;
+    isAcai.value = false;
     return;
   }
 
-  // 🌟 核心修复：如果检测到是管理员，直接拦截并重定向到管理控制台
+  // 管理员继续进入管理员首页
   if (userInfo.role === "admin") {
-    // 使用 replace 而不是 push，防止用户按手机的“返回键”又退回到这个销售主页
     router.replace('/admin-home');
     return;
   }
 
   isDisabled.value = userInfo.status === "disabled";
 
-  // 因为 admin 已经被拦截走了，这里只需要校验销售和经理即可
   const validRoles = ["sales", "manager"];
   isVisitor.value = !validRoles.includes(userInfo.role);
+
+isAcai.value =
+  userInfo.id === "6a68cef98daaa5a062abbd4e" &&
+  userInfo.role === "sales";
+    
 };
 
 // 获取待办红点数字
@@ -393,5 +433,62 @@ const goToWorkReport = () => {
 .disabled-card {
   filter: grayscale(100%);
   opacity: 1;
+}
+/* 底部设置与退出区样式 */
+.settings-section {
+  margin-top: 35px;
+  padding-bottom: 20px;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.section-divider .line {
+  width: 40px;
+  height: 1px;
+  background-color: #a3a3a3;
+  margin: 0 12px;
+}
+
+.section-divider .text {
+  font-size: 13px;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+.logout-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* 淡淡的红色阴影，提升高级感且呼应危险操作 */
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08); 
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-card:active {
+  transform: scale(0.98);
+  background: #fef2f2; /* 浅红色的触控反馈，比默认灰色更好看 */
+}
+
+.logout-icon {
+  font-size: 20px;
+  color: #ef4444;
+  margin-right: 8px;
+}
+
+.logout-text {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ef4444;
 }
 </style>
